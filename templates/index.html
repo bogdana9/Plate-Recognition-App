@@ -1,0 +1,60 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="text-center text-secondary text-muted fs-3 fw-light"><p>Upload your picture</p></div>
+        <div class="mt-2 mb-5 col-md-10">
+            <form action="#" method="POST" enctype="multipart/form-data">
+                <div class="input-group">
+                    <input type="file" class="form-control" name="image_name" required>
+                    <input type="submit" value="Upload" class="btn btn-outline-secondary">
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% if upload %}
+<div class="container-lg">
+    <div class="row align-items-center justify-content-center ">
+        <div class="col-md-5 text-center">
+            <img class="rounded img-fluid mx-auto" src="/static/upload/{{ upload_image }}" alt="">
+        </div>
+        <div class="col-md-5 text-center">
+            <img class="rounded img-fluid mx-auto" src="/static/predict/{{ upload_image }}" alt="">
+        </div>
+    </div>
+    
+    <div class="row align-items-center justify-content-center mt-2 mb-4">
+        <div class="col-md-5 text-center">
+            <span class="tt" data-bs-placement="bottom" title="Region of interest">
+                <img src="/static/roi/{{ upload_image }}" class="img-fluid align-center" alt="cropped bounding box"> 
+            </span>
+        </div>
+        <div class="col-md-5 text-center mt-1 row">
+            <h1>
+                <div class="display-5 fs-3 text-muted fw-light">Plate Number:</div>
+                <div class="display-6 fs-2">{{ text }}</div>
+                <!--<span class="input-group-text">
+                <i class="bi bi-check2"></i>
+              </span>-->
+            
+            </h1>
+        </div>
+    </div>
+
+</div>
+    
+{% endif %}
+
+{% endblock body %}
+
+{% block message%}
+
+{% if license_plate %}
+    <!--<p class="display-6 fs-2">{{ license_plate }} </p>-->
+{% endif %}
+
+{% endblock message %}
