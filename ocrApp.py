@@ -1,8 +1,10 @@
 import numpy as np
 import cv2
 import tensorflow as tf
-from tensorflow.keras.preprocessing.image import load_img, img_to_array
-import pytesseract as pt
+from tensorflow.keras.preprocessing.image import load_img, img_to_array 
+import imutils
+import matplotlib.pyplot as plt
+
 
 model = tf.keras.models.load_model(r'C:\Users\bogda\Documents\GitHub\Plate-Recognition-App\static\models\object_detection_4')
 
@@ -24,46 +26,104 @@ def objectDetection(path, filename):
      # convert into bgr
     image_bgr = cv2.cvtColor(image,cv2.COLOR_RGB2BGR)
     cv2.imwrite('./static/predict/{}'.format(filename),image_bgr)
-    return coords
-
-
-import keras_ocr
-import matplotlib.pyplot as plt
-
-
-def objectCharacterRecognition (path, filename):
-    img = np.array(load_img(path))
-    coords = objectDetection(path,filename)
     xmin, xmax, ymin, ymax = coords[0]
     #crop the bounding box -region of interest
-    roi= img [ymin:ymax, xmin:xmax]
-    images = keras_ocr.tools.read(roi)
+    img = np.array(load_img(path))
+    roi = img [ymin:ymax, xmin:xmax]
     roi_bgr = cv2.cvtColor(roi,cv2.COLOR_RGB2BGR)
-    cv2.imwrite('./static/roi/{}'.format(filename),roi_bgr)
-    text = pt.image_to_string(roi)
-    pipeline = keras_ocr.pipeline.Pipeline()
-    predictions = pipeline.recognize(images=[roi])[0]
-    #drawn = keras_ocr.tools.drawBoxes(
-    #    image=img, boxes=predictions, boxes_format='predictions'
-    #)
-    #print(
-    #    'Predicted:', [text for text, box in predictions]
-    #)
-    #plt.imshow(drawn)
-    #plt.show()
-    text = [text for text, _ in predictions]
-    return  "".join(text)
-#import os
-#for root, dirs, files in os.walk(r'C:\Users\bogda\Documents\GitHub\Plate-Recognition-App\Labelling\dataset'):
-    #for filename in files:
-        #if filename.endswith('.jpeg'):
-            #print(filename)
-            #try:
-               # file_path = os.path.join(root, filename)
-                #objectCharacterRecognition(file_path,filename)
-           # except:
-               # pass 
+    scale_percent = 200 # percent of original size
+    
+    width = int(roi_bgr.shape[1] * scale_percent / 100)
+    height = int(roi_bgr.shape[0] * scale_percent / 100)
+    ratio_w_h = width / height
+    perfect_height = 158
+    dim = (int(ratio_w_h * perfect_height), perfect_height)
+    # resize image
+    resized = cv2.resize(roi_bgr, dim, interpolation = cv2.INTER_AREA)
+    cv2.imwrite('./static/roi/{}'.format(filename),resized)
+    return './static/roi/{}'.format(filename)
 
 
+labels_dic = {0: '0', 1: '1', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9: '9', 10: 'Q', 11: 'W', 12: 'E', 13: 'R', 
+14: 'T', 15: 'Y', 16: 'U', 17: 'I', 18: 'O', 19: 'P', 20: 'A', 21: 'S', 22: 'D', 23: 'F', 24: 'G', 25: 'H', 26: 'J', 27: 'K',
+28: 'L', 29: 'Z', 30: 'X', 31: 'C', 32: 'V', 33: 'B', 34: 'N', 35: 'M'}
 
-               
+def top_3_categorical_accuracy(y_true, y_pred):
+    return tf.keras.metrics.top_k_categorical_accuracy(y_true, y_pred, k=3)
+INPUT_SHAPE = (32, 32, 1)
+
+def CNN_model(activation = 'softmax', loss = 'categorical_crossentropy', optimizer = 'adam', metrics = ['accuracy', top_3_categorical_accuracy]):
+    
+    model =  tf.keras.models.Sequential()
+    model.add(tf.keras.layers.Conv2D(32, kernel_size = (3, 3),activation = 'relu',input_shape = INPUT_SHAPE))
+    model.add(tf.keras.layers.Conv2D(64, (3, 3), activation = 'relu'))
+    model.add(tf.keras.layers.Conv2D(128, (4, 4), activation = 'relu'))
+    model.add(tf.keras.layers.MaxPooling2D(pool_size = (2, 2)))
+    model.add(tf.keras.layers.Dropout(0.25))
+    model.add(tf.keras.layers.Flatten())
+    model.add(tf.keras.layers.Dense(128, activation = 'relu'))
+    model.add(tf.keras.layers.Dropout(0.25))
+    model.add(tf.keras.layers.Dense(36, activation = activation))
+    
+    # Compile the model
+    model.compile(loss = loss,optimizer = optimizer, metrics = metrics)
+    
+    return model
+
+model_cnn = CNN_model()
+model_cnn.load_weights(r'C:\Users\bogda\Documents\GitHub\Plate-Recognition-App\OCR\weights.best.letters.hdf5')
+
+def objectCharacterRecognition (path, filename):
+    image_path = objectDetection(path,filename)
+    I = cv2.imread(image_path,cv2.IMREAD_GRAYSCALE)
+    _,I = cv2.threshold(I,0.,255.,cv2.THRESH_OTSU)
+    I = cv2.bitwise_not(I)
+    height, width = I.shape
+    print(height, width)
+    _,labels,stats,centroid = cv2.connectedComponentsWithStats(I)
+
+    result = np.zeros((I.shape[0],I.shape[1],3),np.uint8)
+    counters = []
+    for i in range(0,labels.max()+1):
+        mask = cv2.compare(labels,i,cv2.CMP_EQ)
+
+        ctrs,_ = cv2.findContours(mask,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
+        
+        
+        for cnt in ctrs:
+            (x, y, w, h) = cv2.boundingRect(cnt)
+            if (w >= 10 and w <= 150) and (h >= 40 and h <= 120) and (h >= w):
+                counters.append((x, y, w, h))
+    counters.sort(key = lambda c: c[0])
+    number = ''
+    for i, c in enumerate(counters):
+        x, y, w, h = c
+        roi = I[y:y + h, x:x + w]
+        thresh = cv2.threshold(roi, 0, 255,
+            cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
+        (tH, tW) = thresh.shape
+
+        # if the width is greater than the height, resize along the
+        # width dimension
+        if tW > tH:
+            thresh = imutils.resize(thresh, width=32)
+
+        # otherwise, resize along the height
+        else:
+            thresh = imutils.resize(thresh, height=32)
+
+        # re-grab the image dimensions (now that it has been resized)
+        # and then determine how much we need to pad the width and
+        # height such that our image will be 32x32
+        (tH, tW) = thresh.shape
+        dX = int(max(0, 32 - tW) / 2.0)
+        dY = int(max(0, 32 - tH) / 2.0)
+
+        # pad the image and force 32x32 dimensions
+        padded = cv2.copyMakeBorder(thresh, top=dY, bottom=dY, left=dX, right=dX, borderType=cv2.BORDER_CONSTANT,value=(255, 255, 255))
+        img_arr = cv2.resize(padded, (32, 32))
+        img_arr = img_arr.reshape(1, 32, 32, 1)
+        preds = model_cnn.predict(img_arr)
+        i = np.argmax(preds)
+        number += labels_dic[i]
+    return number
