@@ -22,7 +22,7 @@ labels_dic = {
     24: 'G', 25: 'H', 26: 'J', 27: 'K', 28: 'L', 29: 'Z', 
     30: 'X', 31: 'C', 32: 'V', 33: 'B', 34: 'N', 35: 'M'}
 
-search_plate_model = tf.keras.models.load_model(r'C:\Users\bogda\Documents\GitHub\Plate-Recognition-App\ASSETS\object_detection_4')
+search_plate_model = tf.keras.models.load_model(r'C:\Users\bogda\Documents\GitHub\Plate-Recognition-App\zASSETS\object_detection_4')
 def top_3_categorical_accuracy(y_true, y_pred):
     return tf.keras.metrics.top_k_categorical_accuracy(y_true, y_pred, k=3)
 INPUT_SHAPE = (32, 32, 1)
@@ -53,7 +53,7 @@ def CNN_model(activation = 'softmax',
     return model
 
 ocr_model = CNN_model()
-ocr_model.load_weights(r'C:\Users\bogda\Documents\GitHub\Plate-Recognition-App\ASSETS\OCR\weights.best.letters.hdf5')
+ocr_model.load_weights(r'C:\Users\bogda\Documents\GitHub\Plate-Recognition-App\zASSETS\OCR\weights.best.letters.hdf5')
 
 def objectDetection(path):
     filename = os.path.basename(path)
@@ -77,38 +77,34 @@ def objectDetection(path):
     xmin, xmax, ymin, ymax = coords[0]
     #crop the bounding box -region of interest
     img = np.array(load_img(path))
-    try:
-        roi = img [ymin:ymax, xmin:xmax]
-        roi_bgr = cv2.cvtColor(roi,cv2.COLOR_RGB2BGR)
-        scale_percent = 200 # percent of original size
-        
-        width = int(roi_bgr.shape[1] * scale_percent / 100)
-        height = int(roi_bgr.shape[0] * scale_percent / 100)
-        ratio_w_h = width / height
-        perfect_height = 158
-        dim = (int(ratio_w_h * perfect_height), perfect_height)
-        # resize image
-        resized = cv2.resize(roi_bgr, dim, interpolation = cv2.INTER_AREA)
-        cv2.imwrite('./static/roi/{}'.format(filename),resized)
-        return './static/roi/{}'.format(filename)
-    except:
-        image = load_img('./static/bad.png')
-        cv2.imwrite('./static/predict/{}'.format(filename),image)
-        cv2.imwrite('./static/roi/{}'.format(filename),image)
-        return None
+    
+    roi = img [ymin:ymax, xmin:xmax]
+    roi_bgr = cv2.cvtColor(roi,cv2.COLOR_RGB2BGR)
+    scale_percent = 200 # percent of original size
+    
+    width = int(roi_bgr.shape[1] * scale_percent / 100)
+    height = int(roi_bgr.shape[0] * scale_percent / 100)
+    ratio_w_h = width / height
+    perfect_height = 158
+    dim = (int(ratio_w_h * perfect_height), perfect_height)
+    # resize image
+    resized = cv2.resize(roi_bgr, dim, interpolation = cv2.INTER_AREA)
+    cv2.imwrite('./static/roi/{}'.format(filename),resized)
+    return './static/roi/{}'.format(filename)
+   
 
 def objectCharacterRecognition (image_path):
-    I = cv2.imread(image_path,cv2.IMREAD_GRAYSCALE) #read the image as grayscale
-    _,I = cv2.threshold(I,0.,255.,cv2.THRESH_OTSU) #increase the contrast
-    I = cv2.bitwise_not(I) #reverse the colors
-    height, _ = I.shape
-    _,labels,_,_ = cv2.connectedComponentsWithStats(I) #extract the components
+    I = cv2.imread(image_path,cv2.IMREAD_GRAYSCALE)
+    _,I = cv2.threshold(I,0.,255.,cv2.THRESH_OTSU)
+    I = cv2.bitwise_not(I)
+    height, width = I.shape
+    _,labels,_,_ = cv2.connectedComponentsWithStats(I) 
 
     counters = []
     counters_extra = []
     for i in range(0,labels.max()+1):
-        mask = cv2.compare(labels,i,cv2.CMP_EQ) #creating a mask for all possible labels
-        ctrs,_ = cv2.findContours(mask,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)   #search the contour for each mask
+        mask = cv2.compare(labels,i,cv2.CMP_EQ)
+        ctrs,_ = cv2.findContours(mask,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)  
         for cnt in ctrs:
             (x, y, w, h) = cv2.boundingRect(cnt)
             if (w >= 13 and w <= 150) and (h >= height/3 and h <= 100) and (h >= w):
@@ -177,7 +173,10 @@ def extract_number():
 
     image_path = request.json.get("roi_path")
     number = objectCharacterRecognition(image_path)
-    return jsonify({'number': number}), status.HTTP_200_OK
+    if image_path:
+        return jsonify({'number': number}), status.HTTP_200_OK
+    else:
+        return jsonify({"err": "Not a json request."}), status.HTTP_400_BAD_REQUEST
 
 if __name__ =="__main__":
-    app.run(port=8001, debug=True)
+    app.run(port=8001, debug=False)
