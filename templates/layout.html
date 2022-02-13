@@ -37,7 +37,7 @@
       </div>
     </div> <!--.container-->
   </nav>
-``
+  
     <!--main section-->
 
   <section id="intro">
@@ -47,7 +47,7 @@
           <h1>
             <div class="display-5">A closer step into the future...</div>
           </h1>
-          <p class="lead my-4 text-muted">Lorem ipsum dolor sit amet consectetur, adipisicing elit. Facere culpa beatae reprehenderit aspernatur minima quisquam aliquid, ipsa assumenda atque debitis? Lorem ipsum dolor sit amet consectetur adipisicing elit. Officia provident quisquam dolorum vero laudantium veritatis eum porro hic, unde ipsa perspiciatis excepturi libero? Eum consequuntur impedit delectus nostrum, nihil, eius animi dolorum laudantium dolores recusandae nesciunt et doloremque expedita, explicabo aut? Iure nemo sed vitae iste, sapiente vel sequi a?</p>
+          <p class="lead my-4 text-muted">The Plate Recognition App is a bachelor's degree final project meant to show how convolutional networks networks can be put at work in order to identify and recognize license plates. Feel free to test the app by uploading a picture or add a plate to the Projec's database. If the license plate of the car picture you uploaded is already in the database you will be presented with a checked icon. </p>
         </div>
         <div class="col-md-5 text-center d-none d-md-block">
           <!--tooltip-->
@@ -67,33 +67,7 @@
     {% endblock  %}
 
   </section> <!--end of section upload-->
-
-  <section id="database">
-    <div class="container">
-      <div class="row justify-content-center">
-        <div class="text-center text-secondary text-muted fs-3 fw-light"><p>Add a plate</p></div>
-        <div class="mt-2 mb-5 col-md-10">
-          <form action="#" method="POST" enctype="multipart/form-data">
-            <div class="input-group">
-              <span class="input-group-text">
-                <i class="bi bi-clouds"></i>
-              </span>
-              <input type="text" id="name" class="form-control" name="plate_number" required placeholder=" Enter the number on the license plate" />
-              <input type="submit" value="Add" class="btn btn-outline-secondary">
-              <div id="license_plate justify-content-center text-center">
-                
-                {% block message  %}
-
-
-                {% endblock  %}
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </section> <!--end of section database-->
-      
+    
   <section class= "bg-dark"> 
     <div class="container-xxl p-2">
       <div class="text-light fw-light fs-3 my-1 mb-3 text-center">

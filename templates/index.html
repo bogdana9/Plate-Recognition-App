@@ -33,14 +33,19 @@
                 <img src="/static/roi/{{ upload_image }}" class="img-fluid align-center" alt="cropped bounding box"> 
             </span>
         </div>
-        <div class="col-md-5 text-center mt-1 row">
+        <div class="col-md-5 text-center mt-1">
             <h1>
                 <div class="display-5 fs-3 text-muted fw-light">Plate Number:</div>
-                <div class="display-6 fs-2">{{ text }}</div>
-                <!--<span class="input-group-text">
-                <i class="bi bi-check2"></i>
-              </span>-->
-            
+                <div class="display-6 fs-2">
+                    <p>
+                        {{ text }}
+                        {% if check %}
+                            <i class="bi bi-cloud-check"></i>
+                        {% endif %}
+                    </p>
+                        
+                </div>
+                
             </h1>
         </div>
     </div>
@@ -49,12 +54,33 @@
     
 {% endif %}
 
+<section id="database">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="text-center text-secondary text-muted fs-3 fw-light"><p>Add a plate</p></div>
+        <div class="mt-2 mb-5 col-md-10">
+          <form action="#" method="POST" enctype="multipart/form-data">
+            <div class="input-group">
+              <span class="input-group-text">
+                <i class="bi bi-clouds"></i>
+              </span>
+              <input type="text" id="plate_number" class="form-control" name="plate_number" required placeholder=" Enter the number on the license plate" />
+              <input type="submit" value="Add" class="btn btn-outline-secondary">
+            </div>
+          </form>
+        </div>
+        {% if upload_number %}
+        <div class="mt-2 mb-5 col-md-10 justify-content-center text-center">
+            {{plate_upload_result}}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </section>
 {% endblock body %}
 
 {% block message%}
 
-{% if license_plate %}
-    <!--<p class="display-6 fs-2">{{ license_plate }} </p>-->
-{% endif %}
+
 
 {% endblock message %}
